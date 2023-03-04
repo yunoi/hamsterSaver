@@ -22,6 +22,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.android.volley.toolbox.NetworkImageView;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -50,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private Bitmap downloadedImg;
     Button btnSave;
     EditText editText;
-    ImageView imageView;
+    NetworkImageView imageView;
     String action = "";
     String type = "";
     Intent intent;
@@ -69,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btnSave);
         editText = findViewById(R.id.editText);
         imageView = findViewById(R.id.imageView);
+
         Log.v(TAG, "########## START onCreate ##########");
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
 
@@ -84,26 +87,44 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.v(TAG, "########## START onResume ##########");
+
         intent = getIntent();
+
         if(intent != null){
             Log.v(TAG, "[onResume] ######### intent is not null ##########");
+            Log.v(TAG, intent.toString());
+
+            //((NetworkImageView) findViewById(R.id.myNIV)).setImageUrl(url, MySingleton.getInstance(this).getImageLoader());
 
             action = intent.getAction();
             type = intent.getType();
+            /*
+             * Get the file's content URI from the incoming Intent, then
+             * get the file's MIME type
+             */
+            Uri returnUri = intent.getData();
+            String mimeType = "";
+            if(returnUri != null) {
+                mimeType = getContentResolver().getType(returnUri);
+            }
 
             Log.v(TAG, "[onResume] intent.getAction()" + " : " + action);
             Log.v(TAG, "[onResume] intent.getType()" + " : " + type);
+
+            Log.v(TAG, "[onResume] mimeType" + " : " + mimeType);
         } else {
             Log.v(TAG, "[onResume] ########## intent IS NULL ##########");
         }
 
         if(Intent.ACTION_SEND.equals(action) && type != null) {
             if(type.startsWith("image/")){
+                Log.v(TAG, "[onResume] ########## type startWith video");
                 Toast.makeText(getApplicationContext(), "before saveSendImage function", Toast.LENGTH_SHORT).show();
                 saveSendImage(intent);
             } else if ("text/plain".equals(type)){
                 saveSendText(intent);
             } else if (type.startsWith("video/")){
+                Log.v(TAG, "[onResume] ########## type startWith video");
                 saveSendVideo(intent);
             }
         } else if (Intent.ACTION_SEND_MULTIPLE.equals(action) && type != null) {
@@ -112,6 +133,12 @@ public class MainActivity extends AppCompatActivity {
                 saveSendMultipleImages(intent);
             }
         }
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
     }
 
     public void saveSendText(Intent intent){
@@ -187,8 +214,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "directory problem");
                 }
 
-                //URL url = new URL(strings[0]);
-                URL url = new URL("https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Pearl_Winter_White_Russian_Dwarf_Hamster_-_Front.jpg/220px-Pearl_Winter_White_Russian_Dwarf_Hamster_-_Front.jpg");
+                URL url = new URL(strings[0]);
+                //URL url = new URL("https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Pearl_Winter_White_Russian_Dwarf_Hamster_-_Front.jpg/220px-Pearl_Winter_White_Russian_Dwarf_Hamster_-_Front.jpg");
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 int s = conn.getInputStream().read();
                 URL expandedUrl = conn.getURL();
